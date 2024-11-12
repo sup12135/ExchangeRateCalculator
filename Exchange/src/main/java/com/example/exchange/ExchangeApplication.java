@@ -1,13 +1,13 @@
-package com.example.exchangecal;
+package com.example.exchange;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ExchangeCalApplication {
+public class ExchangeApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ExchangeCalApplication.class, args);
+		SpringApplication.run(ExchangeApplication.class, args);
 	}
 
 }
