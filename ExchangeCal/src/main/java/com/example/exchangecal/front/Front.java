@@ -1,4 +1,4 @@
-package front;
+package com.example.exchangecal.front;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
