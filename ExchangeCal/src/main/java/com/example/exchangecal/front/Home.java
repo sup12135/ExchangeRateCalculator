@@ -2,6 +2,8 @@ package com.example.exchangecal.front;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class Home extends JFrame {
 
@@ -45,6 +47,15 @@ public class Home extends JFrame {
 
         // 중앙 패널을 메인 창에 추가
         this.add(mainPanel, BorderLayout.CENTER);
+
+        // "시작하기" 버튼 클릭 이벤트 추가
+        b1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new MainPage(); // MainPage 창 열기
+                dispose(); // Home 창 닫기
+            }
+        });
 
         // 종료 버튼에 ActionListener 추가
         b2.addActionListener(e -> System.exit(0));
