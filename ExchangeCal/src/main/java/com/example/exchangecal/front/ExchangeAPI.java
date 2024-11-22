@@ -53,7 +53,7 @@ class ExchangeRateGUI extends JFrame {
         JPanel inputPanel = new JPanel(new FlowLayout());
         inputPanel.add(new JLabel("기준 통화:"));
 
-        String[] baseCurrencyOptions = {"USD", "EUR", "GBP", "CNY", "JPY"};
+        String[] baseCurrencyOptions = {"USD", "EUR", "CNY", "JPY"};
         currencySelector = new JComboBox<>(baseCurrencyOptions);
         currencySelector.addActionListener(e -> fetchExchangeRates());
         inputPanel.add(currencySelector);
