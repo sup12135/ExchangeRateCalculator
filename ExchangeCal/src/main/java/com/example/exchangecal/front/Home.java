@@ -17,7 +17,7 @@ public class Home extends JFrame {
         // 전체 레이아웃 설정
         this.setLayout(new BorderLayout());
 
-        
+
 
         // 중앙 패널에 제목과 버튼 배치
         JPanel mainPanel = new JPanel();
