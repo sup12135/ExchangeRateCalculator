@@ -1,4 +1,4 @@
-package com.example.financialadvisor;
+package com.example.exchangecal.front;
 
 import javax.swing.*;
 import java.awt.*;
