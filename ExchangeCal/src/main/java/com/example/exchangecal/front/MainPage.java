@@ -5,6 +5,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import org.json.JSONObject;
 
 public class MainPage extends JFrame {
@@ -14,16 +19,14 @@ public class MainPage extends JFrame {
     private JTextField amountField;
     private JComboBox<String> toComboBox;
     private JTextField resultField;
+    private JLabel adviceLabel;
 
     public MainPage() {
         // 창 제목 설정
         super("환율 계산기");
 
         // 전체 레이아웃 설정 (GridBagLayout 사용)
-        this.setLayout(new BorderLayout());
-
-        // 중앙 패널 (기존 UI 구성)
-        JPanel centerPanel = new JPanel(new GridBagLayout());
+        this.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -34,7 +37,7 @@ public class MainPage extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2; // 버튼이 한 줄 전체 차지
-        centerPanel.add(graphButton, gbc);
+        this.add(graphButton, gbc);
 
         // 기준 국가 (단위) 라벨과 드롭다운 메뉴
         JLabel fromLabel = new JLabel("기준 국가(단위):");
@@ -42,24 +45,24 @@ public class MainPage extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 1;
-        centerPanel.add(fromLabel, gbc);
+        this.add(fromLabel, gbc);
 
         fromComboBox = new JComboBox<>(new String[]{"USD", "EUR", "KRW", "JPY"});
         gbc.gridx = 1;
         gbc.gridy = 1;
-        centerPanel.add(fromComboBox, gbc);
+        this.add(fromComboBox, gbc);
 
         // 금액 라벨과 텍스트 필드
         JLabel amountLabel = new JLabel("금액:");
         amountLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
         gbc.gridx = 0;
         gbc.gridy = 2;
-        centerPanel.add(amountLabel, gbc);
+        this.add(amountLabel, gbc);
 
         amountField = new JTextField(10);
         gbc.gridx = 1;
         gbc.gridy = 2;
-        centerPanel.add(amountField, gbc);
+        this.add(amountField, gbc);
 
         // "=" 기호
         JLabel equalLabel = new JLabel("=", SwingConstants.CENTER);
@@ -67,7 +70,7 @@ public class MainPage extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.gridwidth = 2;
-        centerPanel.add(equalLabel, gbc);
+        this.add(equalLabel, gbc);
 
         // 환전할 통화 (단위) 라벨과 드롭다운 메뉴
         JLabel toLabel = new JLabel("환전할 통화(단위):");
@@ -75,33 +78,42 @@ public class MainPage extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 1;
-        centerPanel.add(toLabel, gbc);
+        this.add(toLabel, gbc);
 
         toComboBox = new JComboBox<>(new String[]{"USD", "EUR", "KRW", "JPY"});
+        toComboBox.setSelectedItem("KRW");
         gbc.gridx = 1;
         gbc.gridy = 4;
-        centerPanel.add(toComboBox, gbc);
+        this.add(toComboBox, gbc);
 
         // 환전된 금액 라벨과 텍스트 필드
         JLabel resultLabel = new JLabel("금액:");
         resultLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
         gbc.gridx = 0;
         gbc.gridy = 5;
-        centerPanel.add(resultLabel, gbc);
+        this.add(resultLabel, gbc);
 
         resultField = new JTextField(10);
         resultField.setEditable(false); // 결과 필드는 수정 불가
         gbc.gridx = 1;
         gbc.gridy = 5;
-        centerPanel.add(resultField, gbc);
+        this.add(resultField, gbc);
+
+        // 환전 추천 코멘트 라벨 추가
+        adviceLabel = new JLabel("");
+        adviceLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        this.add(adviceLabel, gbc);
 
         // 환전 버튼 추가
         JButton convertButton = new JButton("환전하기");
         convertButton.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = 7; // 버튼 위치를 한 줄 아래로 이동
         gbc.gridwidth = 2;
-        centerPanel.add(convertButton, gbc);
+        this.add(convertButton, gbc);
 
         // 환전 버튼 클릭 이벤트 추가
         convertButton.addActionListener(new ActionListener() {
@@ -120,25 +132,7 @@ public class MainPage extends JFrame {
             }
         });
 
-        this.add(centerPanel, BorderLayout.CENTER);
-
-        // 하단 패널 (뒤로가기 버튼만 배치)
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton backButton = new JButton("뒤로가기");
-        backButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12)); // 작고 간단하게
-        backButton.setPreferredSize(new Dimension(100, 30)); // 크기 작게 설정
-        bottomPanel.add(backButton);
-
-        // 뒤로가기 버튼 클릭 이벤트 추가
-        backButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new Home(); // Home 페이지 열기
-                dispose(); // MainPage 닫기
-            }
-        });
-
-        this.add(bottomPanel, BorderLayout.SOUTH);
+        exchangeAPI = new ExchangeAPI();
 
         // 창 크기 설정 및 화면 중앙 배치
         this.setSize(400, 500);
@@ -166,11 +160,79 @@ public class MainPage extends JFrame {
                 double rate = exchangeRates.getJSONObject("rates").getDouble(toCurrency);
                 double convertedAmount = amount * rate;
 
-                SwingUtilities.invokeLater(() -> resultField.setText(String.format("%.2f", convertedAmount)));
+                SwingUtilities.invokeLater(() -> {
+                    resultField.setText(String.format("%.2f", convertedAmount));
+
+                    // 실시간 환율 데이터로 코멘트 업데이트
+                    double currentExchangeRate = exchangeRates.getJSONObject("rates").getDouble("KRW");
+                    double kospi = 2496.12; // 예시 코스피
+                    double kosdaq = 686.25; // 예시 코스닥
+
+                    String advice = analyzeData(currentExchangeRate, kospi, kosdaq);
+                    adviceLabel.setText("<html>조언: " + advice + "</html>"); // HTML 태그 사용
+                });
+
+                // 데이터베이스에 저장
+                saveExchangeRateToDatabase(fromCurrency, toCurrency, rate);
+
             } catch (IOException | InterruptedException ex) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "환율 정보를 가져오는 데 실패했습니다.", "오류", JOptionPane.ERROR_MESSAGE));
             }
         }).start();
+    }
+
+    private void saveExchangeRateToDatabase(String fromCurrency, String toCurrency, double rate) {
+        String url = "jdbc:mysql://localhost:3306/exchange_db";
+        String user = "root";
+        String password = "merk";
+
+        String tableName = getTableNameForCurrency(toCurrency);
+
+        String sql = "INSERT INTO " + tableName + " (currency_from, currency_to, rate, date) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, fromCurrency);
+            pstmt.setString(2, toCurrency);
+            pstmt.setDouble(3, rate);
+            pstmt.setDate(4, java.sql.Date.valueOf(LocalDate.now()));
+
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "데이터베이스에 저장하는 데 실패했습니다.", "오류", JOptionPane.ERROR_MESSAGE));
+        }
+    }
+
+    private String getTableNameForCurrency(String toCurrency) {
+        switch (toCurrency) {
+            case "USD":
+                return "wonDaller";
+            case "EUR":
+                return "wonEuro";
+            case "KRW":
+                return "wonWian";
+            case "JPY":
+                return "wonYen";
+            default:
+                throw new IllegalArgumentException("지원되지 않는 통화: " + toCurrency);
+        }
+    }
+
+    private String analyzeData(double exchangeRate, double kospi, double kosdaq) {
+        // FinancialAdvisor 클래스의 분석 로직 사용
+        double thresholdExchangeRate = 1300.0;
+    
+        if (exchangeRate > thresholdExchangeRate) {
+            if (kospi < 2496 || kosdaq < 686) {
+                return "환율 상승으로 주식 하락 가능성 높음!<br>보수적으로 투자하세요.";
+            } else {
+                return "환율 상승 중이지만 주식은 안정적입니다.<br>신중히 투자하세요.";
+            }
+        } else {
+            return "환율 안정 상태,<br>투자 기회로 적합합니다.";
+        }
     }
 
     public static void main(String[] args) {
