@@ -81,6 +81,7 @@ public class MainPage extends JFrame {
         this.add(toLabel, gbc);
 
         toComboBox = new JComboBox<>(new String[]{"USD", "EUR", "KRW", "JPY"});
+        toComboBox.setSelectedItem("KRW");
         gbc.gridx = 1;
         gbc.gridy = 4;
         this.add(toComboBox, gbc);
@@ -222,15 +223,15 @@ public class MainPage extends JFrame {
     private String analyzeData(double exchangeRate, double kospi, double kosdaq) {
         // FinancialAdvisor 클래스의 분석 로직 사용
         double thresholdExchangeRate = 1300.0;
-
+    
         if (exchangeRate > thresholdExchangeRate) {
             if (kospi < 2496 || kosdaq < 686) {
-                return "환율 상승으로 주식 하락 가능성 높음! 보수적으로 투자하세요.";
+                return "환율 상승으로 주식 하락 가능성 높음!<br>보수적으로 투자하세요.";
             } else {
-                return "환율 상승 중이지만 주식은 안정적입니다. 신중히 투자하세요.";
+                return "환율 상승 중이지만 주식은 안정적입니다.<br>신중히 투자하세요.";
             }
         } else {
-            return "환율 안정 상태, 투자 기회로 적합합니다.";
+            return "환율 안정 상태,<br>투자 기회로 적합합니다.";
         }
     }
 
