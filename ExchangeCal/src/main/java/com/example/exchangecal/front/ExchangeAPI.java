@@ -7,6 +7,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
 
 public class ExchangeAPI {
@@ -70,6 +75,9 @@ class ExchangeRateGUI extends JFrame {
 
         // 초기 데이터 로드
         fetchExchangeRates();
+
+        // 자동 갱신 설정
+        scheduleDailyUpdate();
     }
 
     private void fetchExchangeRates() {
@@ -106,5 +114,22 @@ class ExchangeRateGUI extends JFrame {
                 resultArea.append("해당 통화 정보가 없습니다.\n");
             }
         });
+    }
+
+    private void scheduleDailyUpdate() {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+        // 현재 시간으로부터 자정까지의 시간 계산
+        LocalTime now = LocalTime.now();
+        LocalTime midnight = LocalTime.MIDNIGHT;
+        long initialDelay = now.until(midnight, ChronoUnit.SECONDS); // ChronoUnit.SECONDS 사용
+        if (initialDelay <= 0) {
+            initialDelay += TimeUnit.DAYS.toSeconds(1); // 다음 날 자정으로 설정
+        }
+
+        // 자정 이후 24시간마다 실행
+        scheduler.scheduleAtFixedRate(() -> {
+            SwingUtilities.invokeLater(this::fetchExchangeRates); // fetchExchangeRates 호출
+        }, initialDelay, TimeUnit.DAYS.toSeconds(1), TimeUnit.SECONDS);
     }
 }

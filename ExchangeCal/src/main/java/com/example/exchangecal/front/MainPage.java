@@ -10,6 +10,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
+
+import com.example.exchangecal.client.AIModelClient;
 import org.json.JSONObject;
 
 public class MainPage extends JFrame {
@@ -163,13 +165,16 @@ public class MainPage extends JFrame {
                 SwingUtilities.invokeLater(() -> {
                     resultField.setText(String.format("%.2f", convertedAmount));
 
-                    // 실시간 환율 데이터로 코멘트 업데이트
+                    // AI 모델 호출
                     double currentExchangeRate = exchangeRates.getJSONObject("rates").getDouble("KRW");
-                    double kospi = 2496.12; // 예시 코스피
-                    double kosdaq = 686.25; // 예시 코스닥
+                    double kospi = 2500.0; // 예시 데이터
+                    double kosdaq = 700.0; // 예시 데이터
+                    double oilPrice = 75.0; // 예시 데이터
+                    double fedRate = 2.5; // 예시 데이터
+                    double inflationRate = 2.0; // 예시 데이터
 
-                    String advice = analyzeData(currentExchangeRate, kospi, kosdaq);
-                    adviceLabel.setText("<html>조언: " + advice + "</html>"); // HTML 태그 사용
+                    String advice = AIModelClient.getAdviceFromAI(currentExchangeRate, kospi, kosdaq, oilPrice, fedRate, inflationRate);
+                    adviceLabel.setText("<html>조언: " + advice + "</html>");
                 });
 
                 // 데이터베이스에 저장
@@ -217,21 +222,6 @@ public class MainPage extends JFrame {
                 return "wonYen";
             default:
                 throw new IllegalArgumentException("지원되지 않는 통화: " + toCurrency);
-        }
-    }
-
-    private String analyzeData(double exchangeRate, double kospi, double kosdaq) {
-        // FinancialAdvisor 클래스의 분석 로직 사용
-        double thresholdExchangeRate = 1300.0;
-    
-        if (exchangeRate > thresholdExchangeRate) {
-            if (kospi < 2496 || kosdaq < 686) {
-                return "환율 상승으로 주식 하락 가능성 높음!<br>보수적으로 투자하세요.";
-            } else {
-                return "환율 상승 중이지만 주식은 안정적입니다.<br>신중히 투자하세요.";
-            }
-        } else {
-            return "환율 안정 상태,<br>투자 기회로 적합합니다.";
         }
     }
 

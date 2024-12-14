@@ -37,6 +37,12 @@ dependencies {
 
 	implementation 'org.json:json:20210307'
 
+	implementation 'org.apache.commons:commons-csv:1.9.0'
+
+	implementation 'org.apache.commons:commons-math3:3.6.1'
+
+
+
 
 
 }

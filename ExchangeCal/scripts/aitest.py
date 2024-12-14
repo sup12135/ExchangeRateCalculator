@@ -1,72 +1,103 @@
 import pandas as pd
 import numpy as np
-import datetime
-import requests
-import joblib
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
 
-# 데이터 생성 기간 설정
-start_date = datetime.datetime(2022, 1, 1)
-end_date = datetime.datetime(2024, 11, 30)
-date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+# 1. 데이터 준비
+def generate_data_with_economic_factors(file_path):
+    # 데이터 로드
+    data = pd.read_csv(file_path)
 
-# 난수 생성기의 시드 고정 for reproducibility
-np.random.seed(42)
+    # Date 열 제거 (필요 없는 열)
+    data = data.drop(columns=["Date"], errors="ignore")
 
-# 데이터프레임 생성
-data = {
-    'Date': date_range,
-    'USD_KRW': np.random.uniform(1100, 1400, len(date_range)),
-    'JPY_KRW': np.random.uniform(9.5, 11.5, len(date_range)),
-    'CNY_KRW': np.random.uniform(160, 180, len(date_range)),
-    'EUR_KRW': np.random.uniform(1300, 1600, len(date_range)),
-    'NASDAQ_Index': np.random.uniform(10000, 15000, len(date_range)),
-    'S&P500_Index': np.random.uniform(3500, 4500, len(date_range)),
-    'Crude_Oil_Price': np.random.uniform(50, 100, len(date_range)),
-    'GDP_Growth_Rate': np.random.uniform(1, 4, len(date_range)),
-    'CPI': np.random.uniform(100, 130, len(date_range))
-}
+    # 타겟 변수 생성 (조언 메시지 로직 적용)
+    def create_advice(exchange_rate, kospi, kosdaq, oil_price, fed_rate, inflation_rate):
+        threshold_exchange_rate = 1300.0
+        threshold_oil_price = 80.0
+        threshold_fed_rate = 3.0
+        threshold_inflation_rate = 2.5
 
-# 데이터프레임으로 변환
-df = pd.DataFrame(data)
+        if exchange_rate > threshold_exchange_rate:
+            if oil_price > threshold_oil_price:
+                return "환율 상승과 원유 가격 상승으로 수입 물가 상승 우려, 신중히 환전하세요."
+            else:
+                return "환율 상승 중이지만 원유 가격 안정으로 긍정적인 요소가 있습니다."
+        else:
+            if fed_rate < threshold_fed_rate and inflation_rate < threshold_inflation_rate:
+                return "환율 안정 상태로 투자 기회로 적합합니다."
+            else:
+                return "환율 안정 상태지만 고금리로 인한 투자 리스크 검토가 필요합니다."
 
-# 데이터 전처리
-features = df.drop(columns=['Date', 'USD_KRW'])
+    data["advice"] = data.apply(
+        lambda row: create_advice(
+            row["USD_KRW"],
+            row["KOSPI"],
+            row["KOSDAQ"],
+            row["Crude_Oil_Price"],
+            row["Fed_Funds_Rate"],
+            row["Inflation_Rate"]
+        ),
+        axis=1
+    )
 
-# 특정 금액에 대한 환전 추천 로직
-def recommend_exchange_rate(current_rate, predicted_rate):
-    if predicted_rate > current_rate * 1.02:
-        return "환전을 추천하지 않습니다. 환율이 상승할 것으로 예상됩니다."
-    elif predicted_rate < current_rate * 0.98:
-        return "환전을 추천합니다. 환율이 하락할 것으로 예상됩니다."
-    else:
-        return "환전 여부는 현재 상황에 따라 신중히 고려하시기 바랍니다."
+    # 입력 변수(X)와 타겟 변수(y) 분리
+    X = data[["USD_KRW", "KOSPI", "KOSDAQ", "Crude_Oil_Price", "Fed_Funds_Rate", "Inflation_Rate"]]
+    y = data["advice"]
 
-# 모델 불러오기
-model_path = '/Users/songdongjun/Desktop/ExchangeRateCalculator/ExchangeCal/scripts/random_forest_model.joblib'
-model = joblib.load(model_path)
+    return X, y
 
-# REST API를 통해 실시간 환율 데이터 가져오기
-try:
-    response = requests.get("http://localhost:8080/api/exchange-rate/USD")  # 자바 서버의 엔드포인트 URL
-    response.raise_for_status()
-    real_time_data = response.json()
-    real_time_usd_krw = real_time_data['rates']['KRW']
-except Exception as e:
-    print(f"실시간 환율 데이터를 가져오는 데 실패했습니다: {e}")
-    real_time_usd_krw = None
+# 2. 모델 학습
+def train_model(X, y):
+    # 데이터 분리
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 실시간 데이터를 데이터프레임에 추가
-if real_time_usd_krw is not None:
-    last_features = features.iloc[-1].values.reshape(1, -1)
-    last_rate = real_time_usd_krw
-    next_rate_prediction = model.predict(last_features)[0]
+    # 랜덤 포레스트 모델 학습
+    model = RandomForestClassifier(random_state=42, n_estimators=100)
+    model.fit(X_train, y_train)
 
-    # 추천 출력
-    recommendation = recommend_exchange_rate(last_rate, next_rate_prediction)
-    print(f"현재 실시간 환율: {last_rate}")
-    print(f"예측된 다음 환율: {next_rate_prediction}")
-    print(f"추천: {recommendation}")
-else:
-    print("실시간 환율 데이터를 사용할 수 없습니다.")
+    # 예측
+    y_pred = model.predict(X_test)
 
+    # 평가
+    print("모델 정확도:", accuracy_score(y_test, y_pred))
+    print("\n분류 보고서:\n", classification_report(y_test, y_pred))
+
+    return model
+
+# 3. 조언 생성
+def generate_advice(model, new_data):
+    # 새로운 데이터로 예측
+    predictions = model.predict(new_data)
+    new_data["advice"] = predictions
+    return new_data
+
+# 4. 실행
+if __name__ == "__main__":
+    # 파일 경로 설정 (로컬 데이터 파일)
+    file_path = "/Users/songdongjun/Downloads/data.csv"
+
+    try:
+        # 데이터 준비
+        X, y = generate_data_with_economic_factors(file_path)
+
+        # 모델 학습
+        model = train_model(X, y)
+
+        # 새로운 데이터로 조언 생성
+        new_data = pd.DataFrame({
+            "USD_KRW": [1350, 1450, 1290],
+            "KOSPI": [2500, 2400, 2600],
+            "KOSDAQ": [700, 680, 720],
+            "Crude_Oil_Price": [75, 85, 70],
+            "Fed_Funds_Rate": [2.5, 3.5, 2.0],
+            "Inflation_Rate": [2.0, 3.0, 1.5]
+        })
+        advice_results = generate_advice(model, new_data)
+        print("\n새로운 데이터에 대한 조언:\n", advice_results)
+
+    except FileNotFoundError:
+        print(f"파일을 찾을 수 없습니다. 경로를 확인하세요: {file_path}")
+    except Exception as e:
+        print(f"오류가 발생했습니다: {e}")
