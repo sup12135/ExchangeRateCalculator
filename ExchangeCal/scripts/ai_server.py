@@ -6,7 +6,7 @@ import pandas as pd
 app = Flask(__name__)
 
 # 2. 모델 로드
-model = joblib.load("advice_model.sav")
+model = joblib.load("ExchangeCal/src/main/java/com/example/exchangecal/front/advice_model.sav")
 
 # 3. 예측 API 정의
 @app.route("/predict", methods=["POST"])
